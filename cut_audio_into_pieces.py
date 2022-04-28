@@ -13,10 +13,7 @@ xml_file = sys.argv[3]
 g_mp3dir = g_base_dir + "/mp3s"
 Path(g_mp3dir).mkdir(parents=True, exist_ok=True)
 
-sound = AudioSegment.from_file(os.path.join(g_base_dir, f"{original_audio_file}.wav"))
-sound.export(os.path.join(g_base_dir, f"{original_audio_file}.mp3"), format="mp3")
-
-
+sound = AudioSegment.from_file(os.path.join(g_base_dir, f"{original_audio_file}.mp3"))
 
 def take_portion_from_audio(start, end, portion_name) :
     FMT = '%M:%S.%f'
