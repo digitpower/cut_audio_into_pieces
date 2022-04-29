@@ -12,12 +12,19 @@ xml_file = sys.argv[3]
 dest_mp3s = f'{g_base_dir}/mp3s'
 sound = AudioSegment.from_file(os.path.join(g_base_dir, f"{original_audio_file}.mp3"))
 
-def take_portion_from_audio(first_cut_point, last_cut_point, portion_name, timestamp) :
+g_start_timestamp = 0
+
+def take_portion_from_audio(timestamp_start, timestamp_end, portion_name) :
+
+    #We need cut points in milliseconds, so we multiple to 1000
+    first_cut_point = (timestamp_start - g_start_timestamp)*1000
+    last_cut_point = (timestamp_end - g_start_timestamp)*1000
+    
     sound_clip = sound[first_cut_point:last_cut_point]
     portion_name = portion_name.replace(' ', '_')
     dest_path = f'{dest_mp3s}/{portion_name}'
     Path(dest_path).mkdir(parents=True, exist_ok=True)
-    sound_clip.export(os.path.join(dest_path, f"{timestamp}_{first_cut_point}_{last_cut_point}.mp3"), format="mp3")
+    sound_clip.export(os.path.join(dest_path, f"{timestamp_start}_{timestamp_end}.mp3"), format="mp3")
 
 records = []
 import xml.etree.ElementTree as ET
@@ -28,24 +35,21 @@ for type_tag in root.findall('annotations/annotation'):
     speaker = type_tag.get('labeldata')
     records.append({"ts" : ts , "speaker" :speaker})
 
-g_start_timestamp = 0
-
 for i in range(len(records)):
     if i < len(records) - 1:
-        if i == 0 : # We are on the first line of xml
-            start_tmstmp = int(records[i]["ts"].replace('.000000', ''))
-            g_start_timestamp = start_tmstmp
+        #get timestamp_end from current line and timestamp_end from next line
+        timestamp_start = int(records[i]["ts"].replace('.000000', ''))
+        timestamp_end = int(records[i+1]["ts"].replace('.000000', ''))
         
-        #get start_tmstmp from current line and end_tmstmp from next line
-        start_tmstmp = int(records[i]["ts"].replace('.000000', '')) - g_start_timestamp
-        end_tmstmp = int(records[i+1]["ts"].replace('.000000', '')) - g_start_timestamp
-        
-        
-        
-        take_portion_from_audio(start_tmstmp*1000, end_tmstmp*1000, records[i]["speaker"], start_tmstmp)
+        # We are on the first line of xml
+        if i == 0 : 
+            g_start_timestamp = timestamp_start
+ 
+        # We need start and end timestamps in milliseconds
+        take_portion_from_audio(timestamp_start, timestamp_end, records[i]["speaker"])
     else :
         #This is final line
-        print('this', records[i])
+        print('Final line of xmlfile', records[i])
 
 # Get sorted speakers dirs
 speakers_dirs = []
